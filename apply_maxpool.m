@@ -1,0 +1,17 @@
+function outarray = apply_maxpool(inarray)
+    %inarray is 2Nx2MxD and outarray is size NxMxD
+    out_rows = size(inarray, 1) / 2;
+    out_cols = size(inarray, 2) / 2;
+    outarray = zeros(out_rows, out_cols, size(inarray, 3));
+
+    for row = 1:2:size(inarray, 1)
+        for col = 1:2:size(inarray, 2)
+            window = inarray(row:row+1, col:col+1, :);
+
+            out_row = (row-1) / 2 + 1;
+            out_col = (col-1) / 2 + 1;
+
+            outarray(out_row, out_col, :) = max(window, [], [1 2]);
+        end
+    end
+end

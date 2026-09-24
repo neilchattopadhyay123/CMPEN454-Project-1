@@ -1,6 +1,5 @@
 function outarray = apply_imnormalize (in_array)
-    % in_array is an NxMx3 uint8 image
-    % outarray is NxMx3
+    % inarray is an NxMx3 uint8 image and outarray is NxMx3
     arguments
         in_array (:,:,:) uint8
     end
