@@ -16,6 +16,6 @@ function outarray = apply_convolve(inarray, filterbank, biasvals)
             temp = temp + imfilter(inarray(:,:,k), filterbank(:,:,k,l), 'same', 0, 'conv');
         end
     
-        outarray(:,:,l) = temp + bias(l);
+        outarray(:,:,l) = temp + biasvals(l);
     end
 end
