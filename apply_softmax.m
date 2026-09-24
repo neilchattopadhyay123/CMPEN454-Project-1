@@ -1,6 +1,6 @@
 function outarray = apply_softmax(inarray)
     %inarray is 1x1xD and outarray is the same size
-    outarray = zeros(size(inarray))
+    outarray = zeros(size(inarray));
 
     alpha = max(inarray(1,1,:));
     sumexp = sum(exp(inarray(1,1,:) - alpha), 'all');
