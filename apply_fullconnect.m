@@ -4,7 +4,10 @@ function outarray = apply_fullconnect(inarray, filterbank, biasvals)
 
     [N, M, D1, D2] = size(filterbank);
 
+    % initialize output array
     outarray = zeros(1, 1, D2);
+
+    % Compute the sum of F_l(i,j,k)×In(i,j,k) and add bias
     for l = 1:D2
         outarray(1, 1, l) = sum(inarray .* filterbank(:, :, :, l), 'all') + biasvals(l);
     end

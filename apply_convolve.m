@@ -10,12 +10,14 @@ function outarray = apply_convolve(inarray, filterbank, biasvals)
     outarray = zeros(N, M, D2);
 
     for l = 1:D2
-        temp = zeros(N, M);
+        temp = zeros(N, M); % intial NxM array for output channel l
 
+        % Compute F_l(:,:,k) ∗ In(:,:,k) and add it to the output array
         for k = 1:D1
-            temp = temp + imfilter(inarray(:,:,k), filterbank(:,:,k,l), 'same', 0, 'conv');
+            temp = temp + imfilter(inarray(:,:,k), filterbank(:,:,k,l), 'same', 0, 'conv'); 
         end
     
-        outarray(:,:,l) = temp + biasvals(l);
+        % Add bias values to output array
+        outarray(:,:,l) = temp + biasvals(l); 
     end
 end

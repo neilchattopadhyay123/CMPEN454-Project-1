@@ -1,7 +1,6 @@
 % Main Program --> debugging and evaluating CNN 
 %
 % Loads CIFAR-10 dataset and CNN parameters
-% Displays sample image from each class
 % Displays info of CNN layers
 % Runs debugging through all 18 layers
 % compare results (ours vs known result)
@@ -10,47 +9,16 @@
 % Computes confusion matrix and accuracy 
 
 
-% loads CIFAR-10 dataset 
 % loading this file defines 
 %   imageset (10,000 CIFAR-10 test image)
 %   trueclass (correct class for each image)
 %   classlabels (names of the 10 classes)
 load 'cifar10testdata.mat'
 
-% some sample code to read and display one image from each class
-for classindex = 1:10
-    %get indices of all images of that class
-    inds = find(trueclass==classindex);
-
-    %take first one
-    imrgb = imageset(:,:,:,inds(1));
-
-    %display it along with ground truth text label
-    figure; imagesc(imrgb); truesize(gcf,[64 64]);
-    title(sprintf('\%s',classlabels{classindex}));
-end
-
-% loads CNN parameters 
 % loading this file defines 
 %   filterbanks (filters used in convolution/fullconnect layers)
 %   biasvectors (bias value in convolution/fullconnect layers)
 load 'CNNparameters.mat'
-
-fprintf("CNN Info Layer\n");
-% sample code to verify which layers have filters and biases
-for d = 1:length(layertypes)
-    fprintf('layer %d is of type %s\n',d,layertypes{d});
-    filterbank = filterbanks{d};
-
-    if not(isempty(filterbank))
-        fprintf(' filterbank size %d x %d x %d x %d\n', ...
-            size(filterbank,1),size(filterbank,2), ...
-            size(filterbank,3),size(filterbank,4));
-
-        biasvec = biasvectors{d};
-        fprintf(' number of biases is %d\n',length(biasvec));
-    end
-end
 
 
 % DebuggingTest
@@ -71,7 +39,7 @@ for d = 1:length(layertypes)
     filterbank = filterbanks{d};
     biasvec = biasvectors{d};
 
-    % Apply CNN operations based on what it is
+    % Apply CNN operations based on layer type
     if strcmp(layer, 'imnormalize')
         computed = apply_imnormalize(computed);
     
@@ -106,14 +74,12 @@ end
 expected_classprobvec = squeeze(layerResults{end});
 [expected_maxprob, expected_maxclass] = max(expected_classprobvec);
 
-% note, classlabels is defined in 'cifar10testdata.mat'
 fprintf('expected estimated class is %s with probability %.4f\n', classlabels{expected_maxclass}, expected_maxprob);
 
 % find computed most probable class 
 computed_classprobvec = squeeze(computed);
 [computed_maxprob, computed_maxclass] = max(computed_classprobvec);
 
-% note, classlabels is defined in 'cifar10testdata.mat'
 fprintf('computed estimated class is %s with probability %.4f\n', classlabels{computed_maxclass}, computed_maxprob);
 
 
@@ -125,8 +91,6 @@ axis off;
 title(sprintf('Debugging Image'))
 
 % Displaying Intermediate image
-% gemini suggest code --> displayed intermediate pretty well
-% tweaked code a bit --> kept same idea as suggested code
 layerIntResults = computedLayer{2};
 figure;
 for c = 1:size(layerIntResults, 3)
@@ -139,8 +103,6 @@ end
 colormap gray;
 
 % Displaying softmax probability
-% gemini suggested code --> displayed softmax good enough so I kept it
-% tweaked the code a bit --> overall same idea as suggested code
 figure;
 bar(computed_classprobvec);
 set(gca, 'XTick', 1:numel(classlabels), 'XTickLabel', classlabels);
@@ -191,25 +153,81 @@ for i = 1: size(imageset, 4)
     [~, predictClass] = max(classprobvec);
     trueClass = trueclass(i);
 
-    % confusion matrix 
+    % Update confusion matrix 
     C(trueClass, predictClass) = C(trueClass, predictClass) + 1;
-
-    if mod(i, 1000) == 0
-        fprintf('Processed %d/%d images\n', i, size(imageset, 4));
-    end
 
 end
 
-% accuracy 
-acc = trace(C) / sum(C(:));
-fprintf('\nConfusion Matrix: \n')
+% Confusion Matrix Command Line
+numClasses = numel(classlabels);
+fprintf('\nConfusion Matrix:\n');
 disp(C);
 
+% accuracy
+acc = trace(C) / sum(C(:));
 fprintf('CNN accuracy is %.2f%%\n', acc * 100);
 
+% Percentages by true class (row-normalized)
+rowTotals = sum(C, 2);
+percentC = 100 * C ./ max(rowTotals, 1);
 
+% Figure 1: counts
+figure;
+imagesc(C);
+axis image;
+colormap(parula);
+colorbar;
+xticks(1:numClasses);
+yticks(1:numClasses);
+xticklabels(classlabels);
+yticklabels(classlabels);
+xtickangle(45);
+xlabel('Predicted Class');
+ylabel('True Class');
+title('CIFAR-10 Confusion Matrix - Counts');
+hold on;
 
+for r = 1:numClasses
+    for c = 1:numClasses
+        textColor = 'w';
+        if C(r, c) < 0.5 * max(C(:))
+            textColor = 'k';
+        end
+        text(c, r, sprintf('%d', C(r, c)), ...
+            'HorizontalAlignment', 'center', ...
+            'Color', textColor, ...
+            'FontWeight', 'bold');
+    end
+end
+hold off;
 
+% Figure 2: percentages
+figure;
+imagesc(percentC);
+axis image;
+colormap(parula);
+colorbar;
+clim([0 100]);
+xticks(1:numClasses);
+yticks(1:numClasses);
+xticklabels(classlabels);
+yticklabels(classlabels);
+xtickangle(45);
+xlabel('Predicted Class');
+ylabel('True Class');
+title('CIFAR-10 Confusion Matrix - Percentages');
+hold on;
 
-
-
+for r = 1:numClasses
+    for c = 1:numClasses
+        textColor = 'w';
+        if percentC(r, c) < 50
+            textColor = 'k';
+        end
+        text(c, r, sprintf('%.1f%%', percentC(r, c)), ...
+            'HorizontalAlignment', 'center', ...
+            'Color', textColor, ...
+            'FontWeight', 'bold');
+    end
+end
+hold off;
