@@ -60,7 +60,7 @@ end
 % loading debuggingTest
 load 'debuggingTest.mat'
 
-fprintf('CNN Debugging Test\n');
+fprintf('\nCNN Debugging Test\n');
 
 % CNN parameters
 computed = imrgb;
@@ -73,26 +73,22 @@ for d = 1:length(layertypes)
     % Apply CNN operations based on what it is
     if strcmp(layer, 'imnormalize')
         computed = apply_imnormalize(computed);
-    end
-
-    if strcmp(layer, 'convolve')
+    
+    elseif strcmp(layer, 'convolve')
         computed = apply_convolve(computed, filterbank, biasvec);
-    end
-
-    if strcmp(layer, 'relu')
+    
+    elseif strcmp(layer, 'relu')
         computed = apply_relu(computed);
-    end
-
-    if strcmp(layer, 'maxpool')
+    
+    elseif strcmp(layer, 'maxpool')
         computed = apply_maxpool(computed);
-    end
-
-    if strcmp(layer, 'fullconnect')
+    
+    elseif strcmp(layer, 'fullconnect')
         computed = apply_fullconnect(computed, filterbank, biasvec);
-    end
 
-    if strcmp(layer, 'softmax')
+    elseif strcmp(layer, 'softmax')
         computed = apply_softmax(computed);
+
     end
     
     expected = layerResults{d};
@@ -112,8 +108,68 @@ expected_classprobvec = squeeze(layerResults{end});
 fprintf('expected estimated class is %s with probability %.4f\n', classlabels{expected_maxclass}, expected_maxprob);
 
 % find computed most probable class 
-computed_classprobvec = squeeze(layerResults{end});
+computed_classprobvec = squeeze(computed);
 [computed_maxprob, computed_maxclass] = max(computed_classprobvec);
 
 % note, classlabels is defined in 'cifar10testdata.mat'
 fprintf('computed estimated class is %s with probability %.4f\n', classlabels{computed_maxclass}, computed_maxprob);
+
+
+% Displaying debugging image 
+figure; 
+imagesc(imrgb);
+axis image;
+axis off;
+
+% Displaying softmax probability
+figure;
+bar(computed_classprobvec);
+set(gca, 'XTick', 1:numel(classlabels), 'XTickLabel', classlabels);
+xtickangle(45);
+xlabel('Class');
+ylabel('Probability');
+title('CNN Probabilities');
+
+% Running all CIFAR-10 Test
+% rows = true class
+% columns = predicted class
+fprintf('\nCIFAR-10 Performance\n');
+
+% go through all images in CIFAR-10
+for i = 1: size(imageset, 4)
+
+    % iterate through all 18 layers --> keep track of output array at each one 
+    layerResults = cell(1, length(layertypes));
+
+    for j = 1: length(layertypes)
+        layer = layertypes{j};
+        filterbank = filterbanks{j};
+        biasvec = biasvectors{j};
+
+        if strcmp(layer, 'imnormalize')
+            layerResults{j} = apply_imnormalize(imageset(:, :, :, i));
+        elseif strcmp(layer, 'convolve')
+            layerResults{j} = apply_convolve(layerResults{j-1}, filterbanks{j}, biasvectors{j});
+        elseif strcmp(layer, 'relu')
+            layerResults{j} = apply_relu(layerResults{j-1});
+        elseif strcmp(layer, 'maxpool')
+            layerResults{j} = apply_maxpool(layerResults{j-1})
+        elseif strcmp(layer, 'fullconnect')
+            layerResults{j} = apply_fullconnect(layerResults{j-1}, filterbanks{j}, biasvectors{j});
+        elseif strcmp(layer, 'softmax')
+            layerResults{j} = apply_imnormalize(layerResults{j-1});
+        end
+    end
+
+end
+
+
+
+
+
+
+
+
+
+
+
