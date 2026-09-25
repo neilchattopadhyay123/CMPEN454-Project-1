@@ -56,20 +56,19 @@ end
 % DebuggingTest
 %   imrgb        --> contains a sample test image 
 %   layerResults --> Expected output array of CNN 
-
 % Compare output at every layer with provided correct results for CNN 
 % loading debuggingTest
 load 'debuggingTest.mat'
 
-fprintf("CNN Debugging Test\n");
+fprintf('CNN Debugging Test\n');
 
-% CNN 
+% CNN parameters
 computed = imrgb;
-filterbank = filterbanks{d};
-biasvec = biasvectors{d}
 
 for d = 1:length(layertypes) 
     layer = layertypes{d};
+    filterbank = filterbanks{d};
+    biasvec = biasvectors{d};
 
     % Apply CNN operations based on what it is
     if strcmp(layer, 'imnormalize')
@@ -77,7 +76,7 @@ for d = 1:length(layertypes)
     end
 
     if strcmp(layer, 'convolve')
-        computed = apply_convolve(computed);
+        computed = apply_convolve(computed, filterbank, biasvec);
     end
 
     if strcmp(layer, 'relu')
@@ -89,7 +88,7 @@ for d = 1:length(layertypes)
     end
 
     if strcmp(layer, 'fullconnect')
-        computed = apply_fullconnect(computed);
+        computed = apply_fullconnect(computed, filterbank, biasvec);
     end
 
     if strcmp(layer, 'softmax')
@@ -97,5 +96,10 @@ for d = 1:length(layertypes)
     end
     
     expected = layerResults{d};
-    totalDiff = max(abs(computed(:) - expected(:) ));
+    totalDiff = max(abs(computed(:) - expected(:)));
+
+    % print out all info 
+    fprintf('Layer %2d (%-12s)', d, layer);
+    fprintf(' size = %d x %d x %d', size(computed, 1), size(computed, 2), size(computed, 3));
+    fprintf(' max difference = %.12g\n', totalDiff);
 end
