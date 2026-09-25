@@ -66,6 +66,7 @@ fprintf('\nCNN Debugging Test\n');
 computed = imrgb;
 
 for d = 1:length(layertypes) 
+    % current layer type and CNN parameters
     layer = layertypes{d};
     filterbank = filterbanks{d};
     biasvec = biasvectors{d};
@@ -91,13 +92,14 @@ for d = 1:length(layertypes)
 
     end
     
+    computedLayer{d} = computed;
     expected = layerResults{d};
     totalDiff = max(abs(computed(:) - expected(:)));
 
     % print out all info 
-    fprintf('Layer %2d (%-12s)', d, layer);
+    fprintf('Layer %2d (%-4s)', d, layer);
     fprintf(' size = %d x %d x %d', size(computed, 1), size(computed, 2), size(computed, 3));
-    fprintf(' max difference = %.12g\n', totalDiff);
+    fprintf(' max difference = %.4g\n', totalDiff);
 end
 
 % find expected most probable class 
@@ -120,13 +122,28 @@ figure;
 imagesc(imrgb);
 axis image;
 axis off;
+title(sprintf('Debugging Image'))
+
+% Displaying Intermediate image
+% gemini suggest code --> displayed intermediate pretty well
+% tweaked code a bit --> kept same idea as suggested code
+layerIntResults = computedLayer{2};
+figure;
+for c = 1:size(layerIntResults, 3)
+    subplot(2, 5, c);
+    imagesc(layerIntResults(:, :, c));
+    title(sprintf('Channel %d', c));
+end
+colormap gray;
 
 % Displaying softmax probability
+% gemini suggested code --> displayed softmax good enough so I kept it
+% tweaked the code a bit --> overall same idea as suggested code
 figure;
 bar(computed_classprobvec);
 set(gca, 'XTick', 1:numel(classlabels), 'XTickLabel', classlabels);
 xtickangle(45);
-xlabel('Class');
+xlabel('Image');
 ylabel('Probability');
 title('CNN Probabilities');
 
@@ -149,23 +166,42 @@ for i = 1: size(imageset, 4)
         if strcmp(layer, 'imnormalize')
             layerResults{j} = apply_imnormalize(imageset(:, :, :, i));
         elseif strcmp(layer, 'convolve')
-            layerResults{j} = apply_convolve(layerResults{j-1}, filterbanks{j}, biasvectors{j});
+            layerResults{j} = apply_convolve(layerResults{j-1}, filterbank, biasvec);
         elseif strcmp(layer, 'relu')
             layerResults{j} = apply_relu(layerResults{j-1});
         elseif strcmp(layer, 'maxpool')
-            layerResults{j} = apply_maxpool(layerResults{j-1})
+            layerResults{j} = apply_maxpool(layerResults{j-1});
         elseif strcmp(layer, 'fullconnect')
-            layerResults{j} = apply_fullconnect(layerResults{j-1}, filterbanks{j}, biasvectors{j});
+            layerResults{j} = apply_fullconnect(layerResults{j-1}, filterbank, biasvec);
         elseif strcmp(layer, 'softmax')
-            layerResults{j} = apply_imnormalize(layerResults{j-1});
+            layerResults{j} = apply_softmax(layerResults{j-1});
         end
+    end
+
+
+    % Find final softmax probabilities 
+    classprobvec = squeeze(layerResults{end});
+
+    % Find predicted class
+    [~, predictClass] = max(classprobvec);
+    trueClass = trueclass(i);
+
+    % confusion matrix 
+    C = zeros(10,10);
+    C(trueClass, predictClass) = C(trueClass, predictClass) + 1;
+
+    if mod(i, 1000) == 0
+        fprintf('Processed %d/%d images\n', i, size(imageset, 4));
     end
 
 end
 
+% accuracy 
+acc = trace(C) / sum(C(:));
+fprintf('\nConfusion Matrix: \n')
+disp(C);
 
-
-
+fprintf('CNN accuracy is %.2f%%\n', acc * 100);
 
 
 
