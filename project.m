@@ -92,6 +92,7 @@ for d = 1:length(layertypes)
 
     end
     
+    computedLayer{d} = computed;
     expected = layerResults{d};
     totalDiff = max(abs(computed(:) - expected(:)));
 
@@ -153,6 +154,9 @@ title('CNN Probabilities');
 % columns = predicted class
 fprintf('\nCIFAR-10 Performance\n');
 
+% confusion matrix for later
+C = zeros(10,10);
+
 % go through all images in CIFAR-10
 for i = 1: size(imageset, 4)
 
@@ -188,7 +192,6 @@ for i = 1: size(imageset, 4)
     trueClass = trueclass(i);
 
     % confusion matrix 
-    C = zeros(10,10);
     C(trueClass, predictClass) = C(trueClass, predictClass) + 1;
 
     if mod(i, 1000) == 0
