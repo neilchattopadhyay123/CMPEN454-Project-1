@@ -103,3 +103,17 @@ for d = 1:length(layertypes)
     fprintf(' size = %d x %d x %d', size(computed, 1), size(computed, 2), size(computed, 3));
     fprintf(' max difference = %.12g\n', totalDiff);
 end
+
+% find expected most probable class 
+expected_classprobvec = squeeze(layerResults{end});
+[expected_maxprob, expected_maxclass] = max(expected_classprobvec);
+
+% note, classlabels is defined in 'cifar10testdata.mat'
+fprintf('expected estimated class is %s with probability %.4f\n', classlabels{expected_maxclass}, expected_maxprob);
+
+% find computed most probable class 
+computed_classprobvec = squeeze(layerResults{end});
+[computed_maxprob, computed_maxclass] = max(computed_classprobvec);
+
+% note, classlabels is defined in 'cifar10testdata.mat'
+fprintf('computed estimated class is %s with probability %.4f\n', classlabels{computed_maxclass}, computed_maxprob);
