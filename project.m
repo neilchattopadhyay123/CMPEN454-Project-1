@@ -92,7 +92,6 @@ for d = 1:length(layertypes)
 
     end
     
-    computedLayer{d} = computed;
     expected = layerResults{d};
     totalDiff = max(abs(computed(:) - expected(:)));
 
@@ -132,6 +131,8 @@ figure;
 for c = 1:size(layerIntResults, 3)
     subplot(2, 5, c);
     imagesc(layerIntResults(:, :, c));
+    axis image;
+    axis off;
     title(sprintf('Channel %d', c));
 end
 colormap gray;
